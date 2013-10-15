@@ -13,4 +13,4 @@ a bridge on a portable system is a nice way to perform network analysis task.
 5. Start collecting data on **br0**.
 
 ## License
-`set-bridge` licensed under MIT, for more details check LICENSE.
+`set-bridge` is licensed under MIT, for more details check LICENSE.
