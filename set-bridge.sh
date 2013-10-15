@@ -1,9 +1,11 @@
 #!/bin/bash
+#
+# Copyright (c) 2011-2013 Fabian Affolter <fabian@affolter-engineering.ch>
+# Released under the MIT license.
 # 
 # This bash script setup a transparent and non-permanent bridge for
 # wire-tapping.
 #
-
 BRNAME=br0    # Bridge name
 IFNAME1=em1   # Primary card
 IFNAME2=p3p1  # Secondary card
