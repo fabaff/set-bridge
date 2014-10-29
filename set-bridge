@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2011-2013 Fabian Affolter <fabian@affolter-engineering.ch>
+# Copyright (c) 2011-2014 Fabian Affolter <fabian@affolter-engineering.ch>
 # Released under the MIT license.
 # 
 # This bash script setup a transparent and non-permanent bridge for
