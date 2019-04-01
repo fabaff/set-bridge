@@ -1,21 +1,25 @@
 #!/bin/bash
 #
-# Copyright (c) 2011-2014 Fabian Affolter <fabian@affolter-engineering.ch>
+# Copyright (c) 2011-2019 Fabian Affolter <fabian@affolter-engineering.ch>
 # Released under the MIT license.
 # 
 # This bash script setup a transparent and non-permanent bridge for
 # wire-tapping.
 #
-BRNAME=br0    # Bridge name
-IFNAME1=em1   # Primary card
-IFNAME2=p3p1  # Secondary card
-#IFNAME3=p3p1  # Additional card
+# Bridge name
+BRNAME=br0    
+# Primary card
+IFNAME1=enp0s31f6   
+# Secondary card
+IFNAME2=enp0s20f0u6
+# Additional card
+#IFNAME3=p3p1
 
 brctl_check() {
     if [ ! -e /usr/sbin/brctl ]
         then
             echo "bridge-utils is not installed. Installation starts now ..."
-            yum -y install bridge-utils
+            dnf -y install bridge-utils
     fi
 }
 
@@ -98,13 +102,3 @@ case $INPUT in
 esac
 done
 
-
-# Static IP address for bridge
-# ifconfig $BRNAME 192.168.1.11 netmask 255.255.255.0 up
-# Default route
-# ip route add default via 192.168.1.1
-# or (newer distros)
-# ip addr add 192.168.1.10/24 dev [INTERFACE_NAME]
-# default gateway
-# ip route add default via [GATEWAY_ADDRESS]
-# ip link set [INTERFACE_NAME] up
