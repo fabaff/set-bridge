@@ -1,55 +1,53 @@
 #!/bin/bash
 #
-# Copyright (c) 2011-2019 Fabian Affolter <fabian@affolter-engineering.ch>
+# Copyright (c) 2011-2022 Fabian Affolter <fabian@affolter-engineering.ch>
 # Released under the MIT license.
 # 
 # This bash script setup a transparent and non-permanent bridge for
 # wire-tapping.
 #
 # Bridge name
-BRNAME=br0    
+BRIDGE_NAME=br0    
 # Primary card
-IFNAME1=enp0s31f6   
+INTERFACE_1_NAME=enp0s20f0u1
 # Secondary card
-IFNAME2=enp0s20f0u6
+INTERFACE_2_NAME=enp0s13f0u2
 # Additional card
-#IFNAME3=p3p1
-
-brctl_check() {
-    if [ ! -e /usr/sbin/brctl ]
-        then
-            echo "bridge-utils is not installed. Installation starts now ..."
-            dnf -y install bridge-utils
-    fi
-}
+#INTERFACE_3_NAME=p3p1
 
 bridge_up() {
     # Enable IP forwarding 
     echo "1" > /proc/sys/net/ipv4/ip_forward
+
     # Disable filtering on the bridge
     echo "0" > /proc/sys/net/bridge/bridge-nf-call-arptables
     echo "0" > /proc/sys/net/bridge/bridge-nf-call-iptables
     echo "0" > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+
     # Stop and disable NetworkManager
     service NetworkManager stop
     systemctl disable NetworkManager
     iptables -F
-    # Start bridge configuration    
-    ifconfig $IFNAME1 down
-    ifconfig $IFNAME2 down
-    brctl addbr $BRNAME
-    brctl addif $BRNAME $IFNAME1
-    brctl addif $BRNAME $IFNAME2
-    brctl stp $BRNAME off
-#    brctl setfd $BRNAME 0
-#    ifconfig $IFNAME1 0.0.0.0 up
-#    ifconfig $IFNAME1 0.0.0.0 up
-    ifconfig $IFNAME1 0.0.0.0 promisc up
-    ifconfig $IFNAME2 0.0.0.0 promisc up
-#    ifconfig $BRNAME up 0.0.0.0 up promisc -arp
-#    ifconfig $BRNAME hw ether 00:11:22:33:44:55
-    ifconfig $BRNAME up 0.0.0.0 up
 
+    # Start bridge configuration    
+    ip link set ${INTERFACE_1_NAME} down
+    ip link set ${INTERFACE_2_NAME} down
+
+    # Create a bridge
+    ip link add name ${BRIDGE_NAME} type bridge  
+    ip address add 0.0.0.0 dev ${BRIDGE_NAME}
+    ip link set dev ${BRIDGE_NAME} up
+
+    # Set up interfaces
+    ip addr add 0.0.0.0 dev ${INTERFACE_1_NAME}
+    ip link set ${INTERFACE_1_NAME} promisc up
+    ip addr add 0.0.0.0 dev ${INTERFACE_2_NAME}
+    ip link set ${INTERFACE_2_NAME} promisc up
+    
+    # Add interfaces to bridge
+    ip link set ${INTERFACE_1_NAME} master ${BRIDGE_NAME}
+    ip link set ${INTERFACE_2_NAME} master ${BRIDGE_NAME}
+    
     # ebtables rules
     ebtables -P INPUT DROP
     ebtables -P OUTPUT DROP
@@ -60,19 +58,25 @@ bridge_up() {
 
     echo "Done...Bridge is up."
     echo "---------------------------------------------------------------------"
-    brctl show $BRNAME
-#    systemctl status network.service
+    bridge link
     exit 1
 }
 
 bridge_down() {
-    ifconfig $BRNAME down
-    brctl delif $BRNAME $IFNAME1
-    brctl delif $BRNAME $IFNAME1
-    brctl delbr $BRNAME
-    ifconfig $IFNAME1 down
-    ifconfig $IFNAME1 down
-#    systemctl restart network.service
+    # Delete bridge
+    ifconfig $BRIDGE_NAME down
+    
+    ip link delete ${BRIDGE_NAME} type bridge
+
+    brctl delif $BRIDGE_NAME $INTERFACE_1_NAME
+    brctl delif $BRIDGE_NAME $INTERFACE_1_NAME
+    brctl delbr $BRIDGE_NAME
+    # Bring interfaces down
+    ip link set ${INTERFACE_1_NAME} nomaster
+    ip link set ${INTERFACE_2_NAME} nomaster
+    ip link set ${INTERFACE_1_NAME} down
+    ip link set ${INTERFACE_2_NAME} down
+    # Restart NetworkManager
     systemctl enable NetworkManager
     service NetworkManager restart
     echo "Done...Bridge is down and NetworkManager is controlling your interfaces."
